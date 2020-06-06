@@ -1,0 +1,123 @@
+﻿@{
+    ViewData["Title"] = "Chess";
+}
+
+<div class="text-center">
+	<h1 class="display-4">Chess test</h1>
+    <canvas id="canvas" width="595" height="595"></canvas>
+    <select id="figure">
+        <option value="0">King</option>
+        <option value="1">Queen</option>
+        <option value="2">Bishop</option>
+        <option value="3">Knight</option>
+        <option value="4">Rook</option>
+        <option value="5">Pawn</option>
+    </select>
+    <script>
+    	var values = {0: "king", 1: "queen", 2: "bishop", 3: "knight", 4: "rook", 5: "pawn"};
+        var isSecondClick = false;
+        var first = {x: 0, y: 0};
+        var second = {x: 0, y: 0};
+        var canv = document.getElementById("canvas");
+        
+        function destinationAddress() {
+        	return `/Home/GetInfo?type=${values[document.getElementById("figure").value]}&x1=${first.x}&y1=${first.y}&x2=${second.x}&y2=${second.y}`;
+        }
+        
+        
+        function canvasClick(sent) {
+        	let mousePos = getMousePos(canv, sent);
+        	let result = {
+        	    x: Math.floor((mousePos.x -40) / 64),
+        	    y: Math.floor((mousePos.y -40) / 64)
+        	}; 
+			drawFigure(result);
+        	if(isSecondClick) {
+        		second = result;
+        		ajaxRequest(destinationAddress());
+        	}
+        	else
+        		first = result;
+        	isSecondClick = !isSecondClick;
+        }
+
+        function drawFigure(coords) {
+        	let img = new Image();
+        	img.src = "https://coloring.otk7.com/admin/uploads_n/uploads/7/6/1//43323.png";
+        	let shift = figure.value;
+        	img.onload = function () {
+        		let ctx = canv.getContext("2d");
+        		ctx.drawImage(img, 106*shift, 0, 106, 105, 40 + coords.x*64, 40 + coords.y*64, 64, 64);
+        	};
+        }
+
+
+        function getMousePos(canvas, evt) {
+        	let rect = canvas.getBoundingClientRect();
+        	return {
+        		x: evt.clientX - rect.left,
+        		y: evt.clientY - rect.top - 0.125
+        	}
+        }
+        
+        
+        function ajaxRequest(destinationAddress) {
+            let a = new XMLHttpRequest();
+            a.open("GET", destinationAddress);
+            a.send();
+            a.onreadystatechange = function() {
+                if(a.readyState === 4) {
+                	console.log(first.x + ", " + first.y + " and " + second.x + ", " + second.y);
+                	console.log(destinationAddress);
+                	console.log(a.responseText);
+                	if(a.responseText === "true") 
+		        		alert("Отличный ход!");
+                	else
+                		alert("Так не бывает!");
+                	setTimeout(drawtable, 500);
+                }
+            };
+        };
+                
+        function drawtable() {
+            let ctx = canv.getContext("2d");
+            ctx.clearRect(0, 0, canv.width, canv.height);
+            ctx.font = "24px serif";
+            let black = new Image();
+            black.src = "https://i.pinimg.com/originals/4e/a0/cc/4ea0cc3e88f97d06d18f61055352a4b4.jpg";
+            let white = new Image();
+            white.src = "https://i1.rozetka.ua/goods/8471753/32778839_images_8471753866.jpg";
+            
+            ctx.strokeStyle = '#000000'; // меняем цвет рамки
+            ctx.strokeRect(30, 30, 532, 532);
+            ctx.strokeRect(36, 36, 520, 520);
+            ctx.strokeRect(2, 2, canv.width-2, canv.height-2);
+            black.onload = function() {
+            	ctx.drawImage(black, 40, 40, 512, 512);
+            	white.onload = function() {
+					for (i=0; i<8; i+=2) {
+						ctx.strokeText(i + 1, 8, 15 + 64 + 2*i*32);
+						ctx.strokeText(i + 2, 8, 15 + 2*64 + 2*i*32);
+						for (j=0; j<8; j+=2) {
+							ctx.strokeText(String.fromCharCode(71 - i + 1), 64 + 2*i*32, 22);
+							ctx.strokeText(String.fromCharCode(71 - i), 2*64 + 2*i*32, 22);
+							ctx.drawImage(white, 40 + i*64, 40 + j*64, 64, 64, 40 + i*64, 40 + j*64, 64, 64);
+							ctx.drawImage(white, 40 + (i+1)*64, 40 + (j+1)*64, 64, 64, 40 + (i+1)*64, 40 + (j+1)*64, 64, 64);
+							ctx.strokeText(String.fromCharCode(71 - i + 1), 64 + 2*i*32, canv.height - 10);
+							ctx.strokeText(String.fromCharCode(71 - i), 2*64 + 2*i*32, canv.height - 10);
+						}	
+						ctx.strokeText(i + 1, canv.width - 24, 15 + 64 + 2*i*32);
+						ctx.strokeText(i + 2, canv.width - 24, 15 + 2*64 + 2*i*32);
+					}
+            	}
+            };
+        }
+        
+        function onload() {
+			drawtable();  
+            canv.addEventListener("click", evt => canvasClick(evt), false);
+        }
+        
+        onload();
+    </script>
+</div>
